@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +8,12 @@ namespace CLI
 {
     public class CLSoft
     {
+        private readonly IEnumerable<Object> _dataContainer;
         private readonly CommandFactory _commandFactory;
-        public CLSoft()
+        public CLSoft(IEnumerable<Object> data = null)
         {
             _commandFactory = new CommandFactory();
+            _dataContainer = data;
         }
 
         public void ReadAndProcess(int noCommands=int.MaxValue)
@@ -22,7 +24,7 @@ namespace CLI
                 line = line.Trim();
                 string[] args = line.Split(' ');
 
-                ICommand command = _commandFactory.CreateCommand(args);
+                ICommand command = _commandFactory.CreateCommand(args, _dataContainer);
                 command.Execute();
             }
         }
@@ -32,11 +34,11 @@ namespace CLI
     {
         private readonly IEnumerable<ICommand> _commands = new List<ICommand>() { new CmdList(), new CmdExit() };
 
-        public ICommand CreateCommand(string[] args)
+        public ICommand CreateCommand(string[] args, IEnumerable<Object> data)
         {
             ICommand command = _commands.FirstOrDefault(c => c.CommandName.Equals(args[0]));
 
-            if (command != null || (args.Length>1 && !command.SetArgs(args.Skip(1).ToArray())))
+            if (command == null || !command.SetArgs(args.Skip(1).ToArray(),data))
                 command = new NotFoundCommand(args[0]);
                 
             return command;
@@ -46,7 +48,7 @@ namespace CLI
     public interface ICommand
     {
         string CommandName { get; }
-        bool SetArgs(string[] args = null);
+        bool SetArgs(string[] args = null, IEnumerable<Object> data = null);
         void Execute();
     }
 
@@ -57,7 +59,7 @@ namespace CLI
         {
             CommandName = commandName;
         }
-        public bool SetArgs(string[] args = null) => false;
+        public bool SetArgs(string[] args = null, IEnumerable<Object> data = null) => false;
         public void Execute()
         {
             Console.WriteLine("Couldn't find command: " + CommandName);
@@ -69,18 +71,27 @@ namespace CLI
         public string CommandName { get; set; }
 
         private string className;
+        private IEnumerable<Object> _dataContainer;
         public CmdList()
         { CommandName = "list"; }
-        public bool SetArgs(string[] args = null)
+        public bool SetArgs(string[] args = null, IEnumerable<Object> data = null)
         {
-            if (args == null || args.Length != 1) return false;
+            if (args == null || args.Length != 1 || data == null) return false;
             className = args[0];
+            _dataContainer = data;
             return true; 
         }
 
         public void Execute()
         {
-            if (className == null) return;
+            Console.WriteLine();
+            foreach(Object obj in _dataContainer)
+            {
+                if(obj.GetType().Name.Equals(className) || className.Equals("-a"))
+                {
+                    Console.WriteLine( obj.ToString());
+                }
+            }
             Console.WriteLine();
         }
     }
@@ -88,10 +99,12 @@ namespace CLI
     public class CmdExit : ICommand
     {
         public string CommandName { get; set; }
-
+        
         public CmdExit()
-        { CommandName = "exit"; }
-        public bool SetArgs(string[] args = null) => false;
+        {
+            CommandName = "exit";
+        }
+        public bool SetArgs(string[] args = null, IEnumerable<Object> data = null) => false;
 
         public void Execute()
         {
