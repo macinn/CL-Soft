@@ -8,7 +8,7 @@ namespace CLI
 {
     public class CLSoft
     {
-        private CommandFactory _commandFactory;
+        private readonly CommandFactory _commandFactory;
         public CLSoft()
         {
             _commandFactory = new CommandFactory();
@@ -30,13 +30,13 @@ namespace CLI
 
     public class CommandFactory
     {
-        private IEnumerable<ICommand> _commands;
+        private readonly IEnumerable<ICommand> _commands = new List<ICommand>() { new CmdList(), new CmdExit() };
 
         public ICommand CreateCommand(string[] args)
         {
             ICommand command = _commands.FirstOrDefault(c => c.CommandName.Equals(args[0]));
 
-            if (command != null || !command.SetArgs(args.Skip(1).ToArray()))
+            if (command != null || (args.Length>1 && !command.SetArgs(args.Skip(1).ToArray())))
                 command = new NotFoundCommand(args[0]);
                 
             return command;
@@ -61,6 +61,41 @@ namespace CLI
         public void Execute()
         {
             Console.WriteLine("Couldn't find command: " + CommandName);
+        }
+    }
+
+    public class CmdList : ICommand
+    {
+        public string CommandName { get; set; }
+
+        private string className;
+        public CmdList()
+        { CommandName = "list"; }
+        public bool SetArgs(string[] args = null)
+        {
+            if (args == null || args.Length != 1) return false;
+            className = args[0];
+            return true; 
+        }
+
+        public void Execute()
+        {
+            if (className == null) return;
+            Console.WriteLine();
+        }
+    }
+
+    public class CmdExit : ICommand
+    {
+        public string CommandName { get; set; }
+
+        public CmdExit()
+        { CommandName = "exit"; }
+        public bool SetArgs(string[] args = null) => false;
+
+        public void Execute()
+        {
+            Environment.Exit(0);
         }
     }
 }
