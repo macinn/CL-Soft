@@ -38,7 +38,7 @@ namespace CLI
         {
             ICommand command = _commands.FirstOrDefault(c => c.CommandName.Equals(args[0]));
 
-            if (command == null || !command.SetArgs(args.Skip(1).ToArray(),data))
+            if (command == null || args.Length > 1 && !command.SetArgs(args.Skip(1).ToArray(), data)) 
                 command = new NotFoundCommand(args[0]);
                 
             return command;
