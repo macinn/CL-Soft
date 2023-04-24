@@ -1,4 +1,4 @@
 # CL-Soft
 
 ## General info
-Part of bigger project. Object oriented command line interface supporting custom commands. 
+Part of bigger project. Object oriented command line interface supporting custom commands. Based on command design pattern.
